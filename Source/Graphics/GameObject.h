@@ -1,27 +1,35 @@
 #pragma once
 
-#include "Texture.h"
+#include "Texture2D.h"
 
-#include "SpriteRenderer.h"
-
-#include "Mathematics.h"
+#include "Mathematics/vec2.h"
+#include "Mathematics/vec3.h"
 
 
 namespace graphics
 {
-	struct GameObject
-	{
-		math::vec2<float> position, size, velocity;
-		math::vec3<float> color;
-		float rotation;
+	class SpriteRenderer;
 
-		Texture2D* texture;
+	class GameObject
+	{
+	public:
+		math::vec2<> position, size;
+		math::vec3<> color;
+		float rotation;
+		bool midpoint;
+
+		Texture2D texture;
 
 		GameObject();
-		GameObject(math::vec2<float> pos, math::vec2<float> size, Texture2D* texture,
-			math::vec3<float> color = math::vec3<float>(1.0f), math::vec2<float> velocity = math::vec2(0.0f, 0.0f));
+		GameObject(math::vec2<> pos, math::vec2<> size, Texture2D& texture,
+				   math::vec3<> color = math::vec3<>(1.0f), bool midpoint = false, float rotation = 0.0f);
+		GameObject(const GameObject& src);
 
-		virtual void Draw(SpriteRenderer& renderer);
+		GameObject& operator=(const GameObject& src);
+
+		virtual void Draw(SpriteRenderer* renderer);
+
+		bool IsIn(math::vec2<> point) const;
 	};
 }
 

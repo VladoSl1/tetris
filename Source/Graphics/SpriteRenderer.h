@@ -1,71 +1,71 @@
 #pragma once
 
-#include "Shader.h"
-#include "Texture.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "VertexBufferLayout.h"
-#include "IndexBuffer.h"
+#include "Core/BaseRenderer.h"
+#include "Core/IndexBuffer.h"
 
-#include "Mathematics.h"
+#include "Texture2D.h"
+
+#include "Mathematics/vec2.h"
+#include "Mathematics/vec3.h"
+#include "Mathematics/mat4.h"
+
+#include <vector>
+
+#define uint	unsigned int
+#define uchar	unsigned char
 
 namespace graphics
 {
+	class GameObject;
+
 	struct GraphicQueue
 	{
-		Texture2D* texture;
-		math::vec3<float> color;
-		std::vector<math::mat4<float>> models;
-		VertexBuffer* instance_vbo;
-		
-		~GraphicQueue() {
-			delete texture;
-			delete instance_vbo;
-		}
+		Texture2D texture;
+		math::vec3<> color;
+		math::mat4<> model;
+		std::vector<math::vec2<>> offsets;
 
-		inline unsigned int size() const { return models.size(); }
-		inline void AddModel(math::mat4<float> model) {	models.push_back(model); }
+		inline unsigned int size() const { return offsets.size(); }
+		inline void AddOffset(math::vec2<> model) { offsets.push_back(model); }
 	};
 
-	class SpriteRenderer
+	class SpriteRenderer : protected core::BaseRenderer
 	{
+		const uint SubDataPackSize = 1000U;
+
 	public:
-		SpriteRenderer(Shader* shader);
+		SpriteRenderer(size_t width, size_t height, bool instance_option = false);
 		~SpriteRenderer();
 
-		void DrawSprite(Texture2D* texture, math::vec2<float> position,
-			math::vec2<float> size = math::vec2(15.0f, 15.0f), float rotation = 0.0f,
-			math::vec3<float> color = math::vec3(1.0f));
+		void DrawSprite(Texture2D& texture, math::vec2<> position,
+			math::vec2<> size = math::vec2(15.0f, 15.0f), float rotation = 0.0f,
+			math::vec3<> color = math::vec3(1.0f));
 
-		/* NOT COMPLETED QUEUE */
-		inline unsigned int CreateQueue(Texture2D* texture, math::vec3<float> color = math::vec3(1.0f)) {
-			queues.push_back(GraphicQueue({ texture, color }));
-			return queues.size() - 1;
+		void CreateQueue(math::mat4<> model, Texture2D& texture, uint* queueID, math::vec3<> color = math::vec3(1.0f));
+		void CreateQueue(GameObject& baseObject, uint* queueID);
+
+		inline void DeleteQueue(uint ID) {
+			queues.erase(queues.begin() + ID - 1);
+		};
+
+		inline void ResetQueue(uint ID) {
+			queues[ID - 1].offsets.clear();
+		};
+
+		inline void AddToQueue(uint ID, math::vec2<> position) {
+			queues[ID - 1].AddOffset(position);
 		}
 
-		inline void AddToQueue(unsigned int ID, math::vec2<float> position, math::vec2<float> size = math::vec2(15.0f, 15.0f),
-			float rotation = 0.0f) {
-			queues[ID].AddModel(CreateModel(position, size, rotation));
-		}
+		void DrawQueue(uint queueID);
 
-		inline void FinishStaticQueue(unsigned int ID)
-		{
+	protected:
+		core::IndexBuffer ibo;
+		core::VertexBuffer instance_vbo;
 
-		}
-
-		void DrawQueue(unsigned int queueID);
+		void InitData(bool instance_option);
+		void InitShader(bool instance_option);
 
 	private:
-		Shader* shader;
-		VertexArray* vao;
-		VertexBuffer* vbo;
-		IndexBuffer* ibo;
-
 		std::vector<GraphicQueue> queues;
-
-		void InitData();
-
-		math::mat4<float> CreateModel(math::vec2<float> position, math::vec2<float> size, float rotation) const;
 	};
 }
-
